@@ -1,4 +1,4 @@
-const CACHE_NAME = 'vaya-suivi-v3';
+const CACHE_NAME = 'vaya-suivi-v4';
 const APP_SHELL = [
   './',
   './index.html',

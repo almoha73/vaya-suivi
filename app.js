@@ -843,6 +843,20 @@ els.btnJumpToday.addEventListener('click', () => {
 
 els.btnRefresh.addEventListener('click', () => loadData());
 
+// Auto-refresh when returning to the app (e.g., switching back from Google Sheets or waking phone)
+let lastAutoSyncAt = 0;
+function autoRefreshIfVisible() {
+  if (document.visibilityState !== 'visible') return;
+  if (state.savingCells.size > 0) return;
+  const now = Date.now();
+  if (now - lastAutoSyncAt < 5000) return;
+  lastAutoSyncAt = now;
+  loadData({ silent: true });
+}
+
+document.addEventListener('visibilitychange', autoRefreshIfVisible);
+window.addEventListener('focus', autoRefreshIfVisible);
+
 // Register Service Worker for Android PWA installation
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
