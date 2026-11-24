@@ -33,6 +33,19 @@ if (!Object.hasOwn(HTMLElement.prototype, 'popover')) {
   import('https://unpkg.com/@oddbird/popover-polyfill@latest/dist/popover.min.js').catch(() => {});
 }
 
+// Auto-configure script URL from hash (#script=...) on first open on phone
+(function importScriptUrlFromHash() {
+  const hash = window.location.hash || '';
+  if (!hash.startsWith('#script=')) return;
+  try {
+    const importedUrl = decodeURIComponent(hash.slice('#script='.length)).trim();
+    if (importedUrl && /^https:\/\/script\.google\.com\//i.test(importedUrl)) {
+      localStorage.setItem(STORAGE_KEYS.scriptUrl, importedUrl);
+    }
+    history.replaceState(null, '', window.location.pathname + window.location.search);
+  } catch {}
+})();
+
 // State
 const state = {
   days: [],
@@ -83,6 +96,7 @@ const els = {
   settingsForm: document.getElementById('settings-form'),
   scriptUrlInput: document.getElementById('script-url-input'),
   btnTestScript: document.getElementById('btn-test-script'),
+  btnCopyPhoneLink: document.getElementById('btn-copy-phone-link'),
   settingsTestResult: document.getElementById('settings-test-result'),
   toastRegion: document.getElementById('toast-region'),
   srLiveRegion: document.getElementById('sr-live-region'),
@@ -774,6 +788,28 @@ els.btnTestScript.addEventListener('click', async () => {
   } catch (err) {
     els.settingsTestResult.className = 'test-result test-result--err';
     els.settingsTestResult.textContent = `Échec du test : ${err.message}. Vérifie que le déploiement est bien accessible à "Tout le monde".`;
+  }
+});
+
+els.btnCopyPhoneLink.addEventListener('click', async () => {
+  const url = els.scriptUrlInput.value.trim();
+  els.settingsTestResult.hidden = false;
+  if (!url || isWrongSheetUrl(url)) {
+    els.settingsTestResult.className = 'test-result test-result--err';
+    els.settingsTestResult.textContent = 'Renseigne d’abord une URL Google Apps Script valide (/exec).';
+    return;
+  }
+  const base = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+    ? 'https://almoha73.github.io/vaya-suivi/'
+    : `${window.location.origin}${window.location.pathname}`;
+  const magicLink = `${base}#script=${encodeURIComponent(url)}`;
+  try {
+    await navigator.clipboard.writeText(magicLink);
+    els.settingsTestResult.className = 'test-result test-result--ok';
+    els.settingsTestResult.textContent = 'Lien magique copié ✓ ! Envoie-le toi par mail/SMS et ouvre-le sur ton Android : la synchro s’activera toute seule.';
+  } catch {
+    els.settingsTestResult.className = 'test-result';
+    els.settingsTestResult.textContent = `Copie ce lien et ouvre-le sur ton téléphone : ${magicLink}`;
   }
 });
 
