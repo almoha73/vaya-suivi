@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#1f7a6e">
+  <meta name="description" content="Suivi quotidien du protocole vétérinaire 28 jours de Vaya (Oméprazole, Kéal, 4 repas fractionnés) synchronisé avec Google Sheets.">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Vaya Soins">
+  <title>Vaya — Suivi Traitement</title>
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="icon" type="image/svg+xml" href="./icon.svg">
+  <link rel="apple-touch-icon" href="./icon-192.png">
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <header class="app-header">
+    <div class="header-inner">
+      <div class="brand">
+        <span class="brand-paw" aria-hidden="true">🐾</span>
+        <div class="brand-text">
+          <h1>Vaya — Soins</h1>
+          <p class="brand-sub" id="header-subtitle">Protocole 28 jours • Érosion gastrique</p>
+        </div>
+      </div>
+      <div class="header-actions">
+        <span id="sync-badge" class="sync-badge sync-badge--loading" title="État de synchronisation">
+          <span class="sync-dot" aria-hidden="true"></span>
+          <span class="sync-label">Chargement…</span>
+        </span>
+        <button type="button" id="btn-refresh" class="icon-button" aria-label="Actualiser depuis Google Sheets" title="Actualiser">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M21 12a9 9 0 1 1-2.64-6.36"/>
+            <polyline points="21 3 21 9 15 9"/>
+          </svg>
+        </button>
+        <button type="button" id="btn-settings" class="icon-button" aria-label="Paramètres et synchronisation Google Sheets" title="Paramètres">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <circle cx="12" cy="12" r="3"/>
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9c.26.6.85 1 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main class="app-main">
+    <!-- Banner when Apps Script is not yet configured -->
+    <section id="setup-banner" class="setup-banner" hidden aria-label="Configuration de la synchronisation">
+      <div class="setup-banner-content">
+        <p><strong>Synchronisation écriture non configurée :</strong> tu peux déjà consulter et tester l'appli, mais pour enregistrer tes coches automatiquement dans Google Sheets, ajoute l'URL du script dans les paramètres.</p>
+        <button type="button" id="btn-open-setup" class="btn btn--primary btn--sm">Configurer la synchro</button>
+      </div>
+    </section>
+
+    <!-- VIEW 1: TODAY / DAY CHECKLIST -->
+    <section id="view-today" class="view" aria-label="Suivi du jour">
+      <div class="day-switcher" role="region" aria-label="Navigation par jour">
+        <button type="button" id="btn-prev-day" class="nav-day-btn" aria-label="Jour précédent">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <polyline points="15 18 9 12 15 6"/>
+          </svg>
+        </button>
+        <div class="day-heading">
+          <div class="day-title-row">
+            <h2 id="current-day-label">J5 — 24/11/2026</h2>
+            <span id="today-pill" class="pill pill--today" hidden>Aujourd'hui</span>
+          </div>
+          <p id="current-phase-label" class="day-phase">Phase 1 : Cicatrisation</p>
+        </div>
+        <button type="button" id="btn-next-day" class="nav-day-btn" aria-label="Jour suivant">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <polyline points="9 18 15 12 9 6"/>
+          </svg>
+        </button>
+      </div>
+
+      <div id="jump-today-wrap" class="jump-today-wrap" hidden>
+        <button type="button" id="btn-jump-today" class="btn btn--ghost btn--sm">Revenir à aujourd'hui</button>
+      </div>
+
+      <!-- Daily progress card -->
+      <div class="progress-card" id="day-progress-card">
+        <div class="progress-card-top">
+          <div>
+            <span class="progress-title" id="day-progress-title">Progression du jour</span>
+            <p class="progress-next" id="next-dose-hint"></p>
+          </div>
+          <span class="progress-fraction" id="day-progress-fraction">0 / 8</span>
+        </div>
+        <div class="progress-track" role="progressbar" id="day-progress-bar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" aria-label="Progression des soins du jour">
+          <div class="progress-fill" id="day-progress-fill"></div>
+        </div>
+      </div>
+
+      <!-- Checklist container -->
+      <div id="checklist-container" class="checklist-container" aria-live="polite">
+        <div class="skeleton-card"></div>
+        <div class="skeleton-card"></div>
+        <div class="skeleton-card"></div>
+      </div>
+
+      <!-- Day context / ration / transit -->
+      <div class="context-card" id="day-context-card" hidden>
+        <h3>Repères du jour</h3>
+        <dl class="context-list">
+          <div class="context-item">
+            <dt>🥣 Ration &amp; texture</dt>
+            <dd id="ctx-ration">—</dd>
+          </div>
+          <div class="context-item">
+            <dt>🩺 Transit &amp; comportement</dt>
+            <dd id="ctx-transit">—</dd>
+          </div>
+          <div class="context-item">
+            <dt>📌 Consignes particulières</dt>
+            <dd id="ctx-consignes">—</dd>
+          </div>
+        </dl>
+      </div>
+    </section>
+
+    <!-- VIEW 2: 28-DAY CALENDAR & OVERVIEW -->
+    <section id="view-calendar" class="view" hidden aria-label="Calendrier 28 jours">
+      <div class="kpi-container">
+        <div class="kpi-grid" id="kpi-grid">
+          <article class="kpi-card kpi-card--accent">
+            <span class="kpi-label">Protocole global</span>
+            <strong class="kpi-value" id="kpi-global">—</strong>
+            <span class="kpi-sub" id="kpi-global-sub">Jours validés</span>
+          </article>
+          <article class="kpi-card">
+            <span class="kpi-label">💊 Oméprazole</span>
+            <strong class="kpi-value" id="kpi-omep">—</strong>
+            <span class="kpi-sub" id="kpi-omep-sub">28 doses</span>
+          </article>
+          <article class="kpi-card">
+            <span class="kpi-label">🛡️ Kéal (J1–J10)</span>
+            <strong class="kpi-value" id="kpi-keal">—</strong>
+            <span class="kpi-sub" id="kpi-keal-sub">30 prises</span>
+          </article>
+          <article class="kpi-card">
+            <span class="kpi-label">🍽️ Repas (4/j)</span>
+            <strong class="kpi-value" id="kpi-meals">—</strong>
+            <span class="kpi-sub" id="kpi-meals-sub">112 repas</span>
+          </article>
+        </div>
+      </div>
+
+      <h2 class="section-title">Calendrier des 28 jours</h2>
+      <p class="section-hint">Appuie sur un jour pour ouvrir ses prises à cocher.</p>
+
+      <div class="calendar-container">
+        <div id="calendar-list" class="calendar-grid"></div>
+      </div>
+    </section>
+
+    <!-- VIEW 3: GOLDEN RULES & PATIENT INFO -->
+    <section id="view-rules" class="view" hidden aria-label="Règles d'or et fiche patient">
+      <article class="info-card patient-card">
+        <h2>🐾 Fiche Vaya</h2>
+        <ul class="patient-meta">
+          <li><strong>Patient :</strong> Chihuahua femelle</li>
+          <li><strong>Diagnostic :</strong> Érosion gastrique (sans ulcère)</li>
+          <li><strong>État :</strong> En rémission post-crise • CRP 18,4 mg/L</li>
+          <li><strong>Alimentation :</strong> 4 repas/jour (Pâtée tiédie + croquettes adaptées)</li>
+          <li><strong>Période :</strong> 20 nov. – 17 déc. 2026 (28 jours)</li>
+        </ul>
+      </article>
+
+      <article class="info-card rule-card rule-card--omep">
+        <h2>⚠️ Règle d'or 1 : Oméprazole (10 mg)</h2>
+        <ul>
+          <li><strong>Ne JAMAIS écraser les micro-granules :</strong> le vernis protège la molécule de l'acide.</li>
+          <li>Donner le matin à jeun à <strong>07h30</strong>, 20 à 30 min <strong>AVANT</strong> le repas 1 dans une boulette à gober tout rond.</li>
+        </ul>
+      </article>
+
+      <article class="info-card rule-card rule-card--keal">
+        <h2>⚠️ Règle d'or 2 : Kéal (Sucralfate 1/3 comp. — 3×/j)</h2>
+        <ul>
+          <li><strong>3 prises par jour</strong> (11h30, 17h00, 21h00) sur estomac bien vide (au moins 3h après le repas précédent), du J1 au J10.</li>
+          <li>Administrer <strong>1h AVANT</strong> les repas 2, 3 et 4. Ne jamais donner en même temps que l'Oméprazole (au moins 1h d'écart).</li>
+        </ul>
+      </article>
+
+      <article class="info-card rule-card rule-card--food">
+        <h2>⚠️ Règle d'or 3 : Alimentation &amp; précautions</h2>
+        <ul>
+          <li><strong>ZÉRO friandise dure ni mastication</strong> (nerfs de bœuf, sabots, os à mâcher).</li>
+          <li>Servir la <strong>pâtée tiédie</strong> (température du corps, jamais glacée sortie du frigo). Ramollir les croquettes à l'eau chaude si besoin.</li>
+        </ul>
+      </article>
+
+      <div class="sheet-link-wrap">
+        <a class="btn btn--secondary" href="https://docs.google.com/spreadsheets/d/1VKHF8v74lzlDWnaVbuJROEJ1-RdQtYCQUq1g6ifH5iE/edit?gid=0#gid=0" target="_blank" rel="noopener noreferrer">
+          Ouvrir le Google Sheet complet ↗
+        </a>
+      </div>
+    </section>
+  </main>
+
+  <!-- Fixed Bottom Navigation -->
+  <nav class="bottom-nav" aria-label="Navigation principale">
+    <button type="button" class="bottom-nav-btn is-active" data-view="today" aria-current="page">
+      <span class="nav-icon" aria-hidden="true">✅</span>
+      <span class="nav-text">Aujourd'hui</span>
+    </button>
+    <button type="button" class="bottom-nav-btn" data-view="calendar">
+      <span class="nav-icon" aria-hidden="true">📅</span>
+      <span class="nav-text">28 jours</span>
+    </button>
+    <button type="button" class="bottom-nav-btn" data-view="rules">
+      <span class="nav-icon" aria-hidden="true">📋</span>
+      <span class="nav-text">Règles d'or</span>
+    </button>
+  </nav>
+
+  <!-- Native Modal Dialog for Settings / Sync -->
+  <dialog id="settings-dialog" closedby="any" aria-labelledby="settings-title">
+    <div class="dialog-header">
+      <h1 id="settings-title">Synchronisation Google Sheets</h1>
+      <button type="button" class="icon-button dialog-close-btn" id="btn-close-settings" aria-label="Fermer les paramètres">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <line x1="18" y1="6" x2="6" y2="18"/>
+          <line x1="6" y1="6" x2="18" y2="18"/>
+        </svg>
+      </button>
+    </div>
+
+    <form method="dialog" id="settings-form" class="dialog-body">
+      <div class="field-group">
+        <label for="script-url-input" class="field-label">URL de l'application web Google Apps Script</label>
+        <input
+          type="url"
+          id="script-url-input"
+          name="scriptUrl"
+          class="field-input"
+          placeholder="https://script.google.com/macros/s/.../exec"
+          autocomplete="off"
+          spellcheck="false"
+          autofocus
+        >
+        <p class="field-help">
+          Colle ici l'URL obtenue après avoir déployé <code>Code.gs</code> dans ton Google Sheet (<em>Extensions → Apps Script → Déployer → Application Web</em>).
+        </p>
+      </div>
+
+      <div id="settings-test-result" class="test-result" hidden></div>
+
+      <div class="dialog-actions">
+        <button type="button" id="btn-test-script" class="btn btn--secondary">Tester le lien</button>
+        <button type="submit" value="save" class="btn btn--primary">Enregistrer</button>
+      </div>
+    </form>
+
+    <div class="dialog-footer-links">
+      <a href="https://docs.google.com/spreadsheets/d/1VKHF8v74lzlDWnaVbuJROEJ1-RdQtYCQUq1g6ifH5iE/edit?gid=0#gid=0" target="_blank" rel="noopener noreferrer">
+        Ouvrir le Google Sheet de Vaya ↗
+      </a>
+    </div>
+  </dialog>
+
+  <!-- Toast notifications region -->
+  <div id="toast-region" class="toast-region" role="region" aria-label="Notifications"></div>
+
+  <!-- Pre-populated ARIA live region fallback for browsers without ariaNotify() -->
+  <p class="sr-only">Annonces de statut</p>
+  <div id="sr-live-region" class="sr-only" aria-live="polite" aria-atomic="true"></div>
+
+  <script type="module" src="./app.js"></script>
+</body>
+</html>

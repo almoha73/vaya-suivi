@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" rx="112" fill="#1f7a6e"/>
+  <g fill="#ffffff">
+    <!-- Main pad -->
+    <path d="M256 266c-58 0-108 42-108 92 0 34 26 58 60 58 20 0 36-8 48-8s28 8 48 8c34 0 60-24 60-58 0-50-50-92-108-92z"/>
+    <!-- Left outer toe -->
+    <ellipse cx="144" cy="222" rx="34" ry="46" transform="rotate(-18 144 222)"/>
+    <!-- Left inner toe -->
+    <ellipse cx="212" cy="158" rx="34" ry="48" transform="rotate(-6 212 158)"/>
+    <!-- Right inner toe -->
+    <ellipse cx="300" cy="158" rx="34" ry="48" transform="rotate(6 300 158)"/>
+    <!-- Right outer toe -->
+    <ellipse cx="368" cy="222" rx="34" ry="46" transform="rotate(18 368 222)"/>
+  </g>
+  <!-- Small green heart inside main pad -->
+  <path d="M256 376s-34-22-34-44c0-13 10-22 22-22 7 0 12 4 12 4s5-4 12-4c12 0 22 9 22 22 0 22-34 44-34 44z" fill="#1f7a6e"/>
+</svg>
